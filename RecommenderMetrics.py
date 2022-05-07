@@ -3,6 +3,11 @@ import itertools
 from surprise import accuracy
 from collections import defaultdict
 
+
+# surprise에서는 다양한 정확도 평가에 관한 알고리즘을 제공한다.   
+# 정확도 평가보다 사용자 평가가 더 중요한 지표라고 했지만, 
+# 수식으로서는 정확도 평가만큼 쉽게 제작할 수 있는 것도 없다.   
+
 class RecommenderMetrics:
 
     def MAE(predictions):
@@ -11,7 +16,12 @@ class RecommenderMetrics:
     def RMSE(predictions):
         return accuracy.rmse(predictions, verbose=False)
 
+    # surprise는 주로 평가 예측을 하므로 
+    # 먼저 추천 목록을 얻으려면 GetTopN 함수를 실행한다. 
+    
+    # 평가 예측 목록을 모두 받아서 사용자의 id값과 평가 항목들을 dictionary 형태로 연결해준다. 
     def GetTopN(predictions, n=10, minimumRating=4.0):
+        # default Empty value : 키가 존재하지 않는 데이터에 접근할때 자동으로 Empty value를 설정해줌
         topN = defaultdict(list)
 
 
@@ -23,8 +33,11 @@ class RecommenderMetrics:
             ratings.sort(key=lambda x: x[1], reverse=True)
             topN[int(userID)] = ratings[:n]
 
+        #dict 형태로 반환
         return topN
 
+    # Hit Rate, 적중률을 계산하려면 사용자들의 id와 우선순위 목록이 키-값 형태로 저장된 dict와
+    #           Test용 평점 데이터 세트를 매개변수로 전달해야 한다. 
     def HitRate(topNPredicted, leftOutPredictions):
         hits = 0
         total = 0
