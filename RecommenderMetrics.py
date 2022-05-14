@@ -60,13 +60,15 @@ class RecommenderMetrics:
         # Compute overall precision
         return hits/total
 
+    # 누적 적중률 (cHR)
+    # 일반적인 HR에 적정값에 도달하지 못한 항목들을 제외하는 cut off value를 가진다.
     def CumulativeHitRate(topNPredicted, leftOutPredictions, ratingCutoff=0):
         hits = 0
         total = 0
 
         # For each left-out rating
         for userID, leftOutMovieID, actualRating, estimatedRating, _ in leftOutPredictions:
-            # Only look at ability to recommend things the users actually liked...
+            # 실제 유저가 컷오프 점수보다 높은 평가를 한 데이터로만 hit을 계산
             if (actualRating >= ratingCutoff):
                 # Is it in the predicted top 10 for this user?
                 hit = False
@@ -82,6 +84,9 @@ class RecommenderMetrics:
         # Compute overall precision
         return hits/total
 
+    # 평가 적중률 (rHR)
+    # 별도의 hit rate 계산과 동일하지만 각각의 평가값을 얻기위해
+    # dict형태로 리턴하며, 각각의 지표들이 예측에 얼마나 영향을 미쳤는지 디테일하게 관찰할 수 있다.
     def RatingHitRate(topNPredicted, leftOutPredictions):
         hits = defaultdict(float)
         total = defaultdict(float)
@@ -103,6 +108,9 @@ class RecommenderMetrics:
         for rating in sorted(hits.keys()):
             print (rating, hits[rating] / total[rating])
 
+
+    # 평균 상호 적중률 (ARHR)
+    # 순위의 역수를 더해 상위권 목록의 추천 퀄리티를 높인다.
     def AverageReciprocalHitRank(topNPredicted, leftOutPredictions):
         summation = 0
         total = 0
@@ -123,7 +131,8 @@ class RecommenderMetrics:
 
         return summation / total
 
-    # What percentage of users have at least one "good" recommendation
+    # 유저 커버리지 계산
+    # 임계값 이상의 "좋은" 추천의 수를 전체 유저수로 나눈 값
     def UserCoverage(topNPredicted, numUsers, ratingThreshold=0):
         hits = 0
         for userID in topNPredicted.keys():
@@ -137,12 +146,20 @@ class RecommenderMetrics:
 
         return hits / numUsers
 
+    # 다양성 
+    # 항목별 유사 메트릭을 매개변수로 받는다
+    # 각 항목별 유사성의 평균값 S를 구한 뒤 1에서 빼주어 계산한다.
+    # 실 데이터에서는 모든 조합을 평가하기 매우 복잡하기 때문에 표본 데이터를 이용하면 좋다.
     def Diversity(topNPredicted, simsAlgo):
         n = 0
         total = 0
+        
+        # 항목들을 모두 짝지어서 도출한 유사성 점수를 포함합니다
         simsMatrix = simsAlgo.compute_similarities()
         for userID in topNPredicted.keys():
+            # 우선순위 항목에서 모든 항목을 짝지어준다.
             pairs = itertools.combinations(topNPredicted[userID], 2)
+            # 이를 한쌍 씩 반복하여 각 쌍의 유사성을 찾는다.
             for pair in pairs:
                 movie1 = pair[0][0]
                 movie2 = pair[1][0]
